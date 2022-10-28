@@ -1,5 +1,6 @@
 package org.dnyanyog.request;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.dnyanyog.common.Utils;
@@ -17,6 +18,9 @@ public class RequestMeta {
 	private String requestMethod;
 	private String requestFormat;
 	private String endPoint;
+	private Map<String,String> requestParam = new HashMap<>();
+	
+	
 	
 	public String getRequestMethod() {
 		return requestMethod;
@@ -47,13 +51,38 @@ public class RequestMeta {
 		RequestMeta requestMeta = new RequestMeta();
 		
 		requestMeta.headers= header;
-		requestMeta.requestFormat=Utils.getRequestFormatType(request);
-		requestMeta.requestBody=request;
 		requestMeta.requestMethod=header.get("method");
 		requestMeta.endPoint=header.get("uri");
+		requestMeta.requestBody=request;
+		if(null!=request)
+		{
+			requestMeta.requestFormat=Utils.getRequestFormatType(request);
+		}else {
+			requestMeta.requestFormat=null;
+		}
 		
 		return requestMeta;
 	}
 	
-
+	public static RequestMeta buildMeta(String request, Map<String,String> header, Map<String,String> requestParam)
+	{
+		RequestMeta requestMeta = new RequestMeta();
+		
+		requestMeta.headers= header;
+		requestMeta.requestParam= requestParam;
+		requestMeta.requestMethod=header.get("method");
+		requestMeta.endPoint=header.get("uri");
+		requestMeta.requestBody=request;
+		if(null!=request)
+		{
+			requestMeta.requestFormat=Utils.getRequestFormatType(request);
+		}else {
+			requestMeta.requestFormat=null;
+		}
+		
+		return requestMeta;
+	}
+	public Map<String, String> getRequestParams() {
+		return requestParam;
+	}
 }

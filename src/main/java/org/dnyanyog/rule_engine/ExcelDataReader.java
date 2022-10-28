@@ -18,8 +18,16 @@ public class ExcelDataReader {
     private static final Logger logger = LoggerFactory.getLogger(ExcelDataReader.class);
     
     enum RuleHeader {
-    	RULE_ID(0), RULE_NAME(1), REQUEST_FORMAT(2), REQUEST_TYPE(3), END_POINT(4), EXPECTED_REQUEST(5),
-    	EXPECTED_RESPONSE(6), EXPECTED_RESPONSE_HEADER(7);
+    	RULE_ID(0), 
+    	RULE_NAME(1), 
+    	REQUEST_FORMAT(2), 
+    	REQUEST_TYPE(3), 
+    	END_POINT(4), 
+    	RULE_ON_REQ_HEADER(5),
+    	RULE_ON_REQ_BODY(6), 
+    	RULE_ON_REQ_PARAM(7), 
+    	EXPECTED_RESPONSE(8),
+    	EXPECTED_RESPONSE_HEADER(9);
 
     	public final Integer columnId;
 
@@ -27,7 +35,6 @@ public class ExcelDataReader {
     		this.columnId = columnId;
     	}
     }
-
 
 	private static HSSFSheet ExcelWSheet;
 	private static HSSFWorkbook ExcelWBook;
@@ -39,8 +46,8 @@ public class ExcelDataReader {
 	 */
 
 	public static void getExcelTableArray(List<Rule> rules) throws Exception {
-		String filePath = "/resources/Rules/MockingRules.xls";
-		String sheetName = "AbcAPIMock";
+		String filePath = "/Users/vzodge/Documents/ECLIPSE_WORKSPACES/api-mocking-tool/src/main/resources/Rules/MockingRules.xls";
+		String sheetName = "APIMockRules";
 		String[][] tabArray = null;
 		try {
 			logger.info("*************** getExcelTableArray - File path - " + filePath);
@@ -58,9 +65,12 @@ public class ExcelDataReader {
 						getCellData(intRowCounter, RuleHeader.REQUEST_FORMAT.columnId),
 						getCellData(intRowCounter, RuleHeader.REQUEST_TYPE.columnId),
 						getCellData(intRowCounter, RuleHeader.END_POINT.columnId),
-						getCellData(intRowCounter, RuleHeader.EXPECTED_REQUEST.columnId),
+						getCellData(intRowCounter, RuleHeader.RULE_ON_REQ_BODY.columnId),
 						getCellData(intRowCounter, RuleHeader.EXPECTED_RESPONSE.columnId),
-						getCellData(intRowCounter, RuleHeader.EXPECTED_RESPONSE_HEADER.columnId)));
+						getCellData(intRowCounter, RuleHeader.EXPECTED_RESPONSE_HEADER.columnId),
+						getCellData(intRowCounter, RuleHeader.RULE_ON_REQ_HEADER.columnId),
+						getCellData(intRowCounter, RuleHeader.RULE_ON_REQ_PARAM.columnId)
+						));
 
 
 			}
@@ -111,7 +121,6 @@ public class ExcelDataReader {
 			ExcelWBook = new HSSFWorkbook(ExcelFile);
 			ExcelWSheet = ExcelWBook.getSheet(sheetName);
 		} catch (Exception e) {
-
 			throw (e);
 		}
 	}

@@ -16,10 +16,17 @@ public class Rule {
 	private String requestFormat;
 	private String requestType;
 	private String endPoint;
-	private Map<String, String> rulesOnBodyMap = new HashedMap<>();
+	private Map<String, String> rulesOnReqBody = new HashedMap<>();
+	private Map<String, String> rulesOnReqBodyHeader = new HashedMap<>();
+	private Map<String, String> rulesOnReqParam = new HashedMap<>();
 	private String expectedResponse;
 	public String getExpectedResponse() {
 		return expectedResponse;
+	}
+	
+
+	public Map<String, String> getRulesOnReqParam() {
+		return rulesOnReqParam;
 	}
 
 	public Map<String, String> getExpectedResponseHeader() {
@@ -50,7 +57,7 @@ public class Rule {
 	}
 
 	public Map<String, String> getRulesOnBodyMap() {
-		return rulesOnBodyMap;
+		return rulesOnReqBody;
 	}
 
 	public Map<String, String> expectedResponseHeaders() {
@@ -58,7 +65,7 @@ public class Rule {
 	}
 
 	public Rule(String ruleId, String ruleName, String reqeustFormat, String requestType, String endPoints,
-			String requstRules, String expectedResponse, String expectedResponseHeader) {
+			String rulesOnRequestBody, String expectedResponse, String expectedResponseHeader,String rulesOnRequestHeader,String rulesOnRequestParam) {
 		this.ruleId = ruleId;
 		this.ruleName = ruleName;
 		this.requestFormat = reqeustFormat;
@@ -66,20 +73,33 @@ public class Rule {
 		this.endPoint = endPoints;
 		this.expectedResponse = expectedResponse;
 
-		if (requstRules.length() > 5) {
-			String[] rules = requstRules.split("\n");
+		if (rulesOnRequestBody.length() > 4) {
+			String[] rules = rulesOnRequestBody.split("\n");
 			for (String rule : rules) {
-				rulesOnBodyMap.put(rule.split("->")[0], rule.split("->")[1]);
+				rulesOnReqBody.put(rule.split("->")[0], rule.split("->")[1]);
 			}
 		}
 		
-		if (expectedResponseHeader.length() > 5) {
-			String[] expectedResponseHeaders = expectedResponseHeader.split("\n");
-			for (String header : expectedResponseHeaders) {
+		if (expectedResponseHeader.length() > 4) {
+			String[] expectedResponseHeadersArray = expectedResponseHeader.split("\n");
+			for (String header : expectedResponseHeadersArray) {
 				this.expectedResponseHeader.put(header.split("->")[0], header.split("->")[1]);
 			}
 		}
-
+		
+		if (rulesOnRequestHeader.length() > 4) {
+			String[] rulesOnRequestHeaderArray = rulesOnRequestHeader.split("\n");
+			for (String header : rulesOnRequestHeaderArray) {
+				this.rulesOnReqBodyHeader.put(header.split("->")[0], header.split("->")[1]);
+			}
+		}
+		
+		if (rulesOnRequestParam.length() > 4) {
+			String[] rulesOnRequestParamArray = rulesOnRequestParam.split("\n");
+			for (String rule : rulesOnRequestParamArray) {
+				this.rulesOnReqParam.put(rule.split("->")[0], rule.split("->")[1]);
+			}
+		}
 	}
 
 }

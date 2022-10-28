@@ -3,90 +3,71 @@ package org.dnyanyog.processor;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.dnyanyog.request.RequestMeta;
 import org.dnyanyog.rule_engine.Rule;
-import org.dnyanyog.rule_engine.RuleHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
 
 @Component
 public class ResponseProcessor {
 	private static final Logger logger = LoggerFactory.getLogger(ResponseProcessor.class);
+	
+	@Autowired
+	RuleProcessor ruleProcessor;
 
 	enum HttpMethods {
 		POST, GET, DELETE, PUT, PATCH
 	}
 
-	public String getResponse(RequestMeta reqeustMeta, HttpServletResponse response) {
-
+	public ResponseEntity<String> getResponse(RequestMeta reqeustMeta, HttpServletResponse response) {
+		
+		final HttpHeaders httpHeaders= new HttpHeaders();
+		
 		if (!validateRequest(reqeustMeta)) {
-			return "ERROR";
+			return new ResponseEntity<String>("{}", httpHeaders, HttpStatus.BAD_REQUEST);
 		}
 
 //###### Detect rule to be applied
 
-		Stream<Rule> filteredRulesIterator = RuleHolder.getRules().stream()
-				.filter(p -> p.getEndPoint().equals(reqeustMeta.getEndPoint()))
-				.filter(p -> p.getRequestType().equals(reqeustMeta.getRequestHttpType()))
-				.filter(p -> p.getRequestFormat().equals(reqeustMeta.getRequestFormat()))
-				.filter(p -> ruleOnBodyMatched(p, reqeustMeta)).map(p -> null != p ? p : null);
-
-		List<Rule> filteredRules = filteredRulesIterator.collect(Collectors.toList());
+		List<Rule> filteredRules = ruleProcessor.getFilteredRules(reqeustMeta);
 
 		if (filteredRules.isEmpty()) {
 			logger.error("!!!!!!! Unable to find any matching rule. Returning ERROR");
-			return "ERROR";
+			return new ResponseEntity<String>("{}", httpHeaders, HttpStatus.BAD_REQUEST);
 		}
-		if (!filteredRules.isEmpty() && filteredRules.size() > 1) {
+		if (filteredRules.size() > 1) {
 			logger.error(
 					"!!!!!!! Unable to find unique rule for the request. Below are the ruleNames matched with the request");
 			filteredRules.forEach(p -> System.out.println(p.getRuleName()));
-			return "ERROR";
+			return new ResponseEntity<String>("{}", httpHeaders, HttpStatus.BAD_REQUEST);
 		}
 
 		Rule detectedRule = filteredRules.get(0);
 		logger.info("****** Rule match : " + detectedRule.getRuleName());
 
 //###### Set response header as per expectation		
-		setResponseHeaderAsPerExpectedResponse(detectedRule.getExpectedResponseHeader(), response);
+		setResponseHeaderAsPerExpectedResponse(detectedRule.getExpectedResponseHeader(), httpHeaders);
 
 //###### return response
-		return filteredRules.get(0).getExpectedResponse();
+		return new ResponseEntity<String>(filteredRules.get(0).getExpectedResponse(), httpHeaders,null==httpHeaders.get("status")?HttpStatus.OK:deriveHttpStatus(httpHeaders));
 	}
 
-	private boolean ruleOnBodyMatched(Rule rule, RequestMeta reqeustMeta) {
 
-		switch (reqeustMeta.getRequestFormat()) {
-		case "JSON":
-
-			DocumentContext jsonContext = JsonPath.parse(reqeustMeta.getRequestBody());
-			for (String key : rule.getRulesOnBodyMap().keySet()) {
-				if (!jsonContext.read(key).toString().equals(rule.getRulesOnBodyMap().get(key)))
-					return false;
-			}
-			break;
-
-		case "XML":
-
-			break;
-		default:
-			return false;
-
-		}
-
-		return true;
+	private HttpStatus deriveHttpStatus(HttpHeaders httpHeaders) {
+			System.out.println(httpHeaders.get("status").get(0));
+			return HttpStatus.valueOf(Integer.valueOf(httpHeaders.get("status").get(0)));
 	}
 
-	public static Predicate<String> nameStartingWithPrefix(String nextLine) {
+
+	public Predicate<String> nameStartingWithPrefix(String nextLine) {
 		return new Predicate<String>() {
 
 			@Override
@@ -98,7 +79,7 @@ public class ResponseProcessor {
 	}
 
 	private boolean validateRequest(RequestMeta reqeustMeta) {
-		if (reqeustMeta.getRequestFormat().length() < 1) {
+		if (null!=reqeustMeta.getRequestBody() && reqeustMeta.getRequestFormat().length() < 1) {
 			logger.error("!!!!!!!!!! Reuqest Method is empty");
 			return false;
 		}
@@ -108,7 +89,7 @@ public class ResponseProcessor {
 			return false;
 		}
 
-		if (reqeustMeta.getRequestFormat().contains("POST")
+		if (null!=reqeustMeta.getRequestBody()&&reqeustMeta.getRequestFormat().contains("POST")
 				&& (reqeustMeta.getRequestBody() == null || reqeustMeta.getRequestBody().length() < 1)) {
 			logger.error("!!!!!!!!!! Reuqest body is empty for Post Request");
 			return false;
@@ -118,13 +99,13 @@ public class ResponseProcessor {
 		return true;
 	}
 
-	private static void setResponseHeaderAsPerExpectedResponse(Map<String, String> map, HttpServletResponse response) {
+	private void setResponseHeaderAsPerExpectedResponse(Map<String, String> map, HttpHeaders httpHeaders) {
 		for (String s : map.keySet()) {
 			switch (s) {
 			case "Status":
 			case "status":
 				try {
-					response.setStatus(Integer.valueOf(map.get(s)));
+					httpHeaders.add("status",Integer.valueOf(map.get(s)).toString());
 				} catch (NumberFormatException exception) {
 					exception.printStackTrace();
 					logger.error(
@@ -133,7 +114,7 @@ public class ResponseProcessor {
 				}
 				break;
 			default:
-				response.setHeader(s, map.get(s));
+				httpHeaders.add(s, map.get(s));
 				break;
 
 			}
