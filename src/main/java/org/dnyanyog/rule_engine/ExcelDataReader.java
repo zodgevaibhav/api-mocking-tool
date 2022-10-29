@@ -46,7 +46,7 @@ public class ExcelDataReader {
 	 */
 
 	public static void getExcelTableArray(List<Rule> rules) throws Exception {
-		String filePath = "/Users/vzodge/Documents/ECLIPSE_WORKSPACES/api-mocking-tool/src/main/resources/Rules/MockingRules.xls";
+		String filePath = "src/main/resources/Rules/MockingRules.xls";
 		String sheetName = "APIMockRules";
 		String[][] tabArray = null;
 		try {
