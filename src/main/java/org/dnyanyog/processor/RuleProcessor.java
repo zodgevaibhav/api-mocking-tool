@@ -1,9 +1,11 @@
 package org.dnyanyog.processor;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.tomcat.util.digester.Rules;
 import org.dnyanyog.request.RequestMeta;
 import org.dnyanyog.rule_engine.Rule;
 import org.dnyanyog.rule_engine.RuleHolder;
@@ -19,6 +21,9 @@ public class RuleProcessor {
 		// **** Skip of rules on the basis of what information available
 		Object[] arr = RuleHolder.getRules().toArray();
 		Stream<Rule> filteredRulesIterator = RuleHolder.getRules().stream();
+		
+		
+		//***** Request Format
 		if (null != requestMetaData.getRequestFormat()) {
 			System.out.println("********** Inside request format rule");
 
@@ -27,26 +32,58 @@ public class RuleProcessor {
 					.map(p -> null != p ? p : null);
 		}
 		
+		//***** Request End Point
 		filteredRulesIterator = filteredRulesIterator.filter(p -> p.getEndPoint().equals(requestMetaData.getEndPoint()))
 				.filter(p -> p.getRequestType().equals(requestMetaData.getRequestHttpType()))
 				.map(p -> null != p ? p : null);
 
-		
+		//***** Request Param Rule
 		filteredRulesIterator = filteredRulesIterator.filter(p -> matchRulesOnRequstParameter(p, requestMetaData))
 				.map(p -> null != p ? p : null);
 		
-
+		//***** Request Header Rule
+		filteredRulesIterator = filteredRulesIterator.filter(p -> matchRequestHeaderRules(p, requestMetaData))
+				.map(p -> null != p ? p : null);
 		
+		
+		//***** Request Body Rule		
 		if (null != requestMetaData.getRequestBody()) {
 			System.out.println("********** Inside body rule");
-			filteredRulesIterator = filteredRulesIterator.filter(p -> ruleOnBodyMatched(p, requestMetaData))
-					.map(p -> null != p ? p : null);
+			filteredRulesIterator = filteredRulesIterator
+										.filter(p -> ruleOnBodyMatched(p, requestMetaData))
+										.sorted(Comparator.comparingInt(Rule::getBodyRulesCount)) //planning to pick Rule which higher number of rulesOnBody. Non functional yet
+										.map(p -> null != p ? p : null);
 		}
-
 
 		List<Rule> filteredRules = filteredRulesIterator.collect(Collectors.toList());
 
 		return filteredRules;
+	}
+
+	private boolean matchRequestHeaderRules(Rule p, RequestMeta requestMetaData) {
+		if (p.getRulesOnReqBodyHeader().size() <= 0) // If there is no req param rule in rule in context then skip this check
+			return true;
+		
+		if(requestMetaData.getRequestHeaders().size()<=0)
+			return false;
+			
+		for (String keys : p.getRulesOnReqBodyHeader().keySet()) {
+			try {
+
+				if (requestMetaData.getRequestHeaders().containsKey(keys)) { // To apply current rule in context, req param must have the param
+					if (!p.getRulesOnReqBodyHeader().get(keys).contains(requestMetaData.getRequestHeaders().get(keys))) { // Rule param value should match with req param value
+						return false;
+					}
+				}else { // If the rule param is not present in request param then do not apply the rule
+					return false;
+				}
+			} catch (Exception e) {
+				System.out.println("!!!!!!!!!! Somthing wrong in applying request header rule for rule - " + p.getRuleName());
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 	private boolean matchRulesOnRequstParameter(Rule p, RequestMeta requestMetaData) {
@@ -97,4 +134,6 @@ public class RuleProcessor {
 
 		return true;
 	}
+	
+
 }

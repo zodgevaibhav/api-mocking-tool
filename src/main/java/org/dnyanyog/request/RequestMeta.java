@@ -19,7 +19,7 @@ public class RequestMeta {
 	private String requestFormat;
 	private String endPoint;
 	private Map<String,String> requestParam = new HashMap<>();
-	
+	private Map<String,String> requestHeader = new HashMap<>();
 	
 	
 	public String getRequestMethod() {
@@ -27,11 +27,7 @@ public class RequestMeta {
 	}
 	public String getEndPoint() {
 		return endPoint;
-	}
-
-
-	private Map<String, String> headers;
-	
+	}	
 	public String getRequestBody() {
 		return requestBody;
 	}
@@ -41,8 +37,8 @@ public class RequestMeta {
 	public String getRequestFormat() {
 		return requestFormat;
 	}
-	public Map<String, String> getHeaders() {
-		return headers;
+	public Map<String, String> getRequestHeaders() {
+		return requestHeader;
 	}
 	
 	
@@ -50,7 +46,7 @@ public class RequestMeta {
 	{
 		RequestMeta requestMeta = new RequestMeta();
 		
-		requestMeta.headers= header;
+		requestMeta.requestHeader= header;
 		requestMeta.requestMethod=header.get("method");
 		requestMeta.endPoint=header.get("uri");
 		requestMeta.requestBody=request;
@@ -68,7 +64,7 @@ public class RequestMeta {
 	{
 		RequestMeta requestMeta = new RequestMeta();
 		
-		requestMeta.headers= header;
+		requestMeta.requestHeader= header;
 		requestMeta.requestParam= requestParam;
 		requestMeta.requestMethod=header.get("method");
 		requestMeta.endPoint=header.get("uri");

@@ -20,6 +20,17 @@ public class Rule {
 	private Map<String, String> rulesOnReqBodyHeader = new HashedMap<>();
 	private Map<String, String> rulesOnReqParam = new HashedMap<>();
 	private String expectedResponse;
+
+	public Map<String, String> getRulesOnReqBodyHeader() {
+		return rulesOnReqBodyHeader;
+	}
+
+
+	public void setRulesOnReqBodyHeader(Map<String, String> rulesOnReqBodyHeader) {
+		this.rulesOnReqBodyHeader = rulesOnReqBodyHeader;
+	}
+
+
 	public String getExpectedResponse() {
 		return expectedResponse;
 	}
@@ -64,6 +75,11 @@ public class Rule {
 		return expectedResponseHeader;
 	}
 
+	public int getBodyRulesCount()
+	{
+		return rulesOnReqBody.size();
+	}
+	
 	public Rule(String ruleId, String ruleName, String reqeustFormat, String requestType, String endPoints,
 			String rulesOnRequestBody, String expectedResponse, String expectedResponseHeader,String rulesOnRequestHeader,String rulesOnRequestParam) {
 		this.ruleId = ruleId;
